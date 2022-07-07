@@ -12,13 +12,11 @@ class SearchProvider{
       Response response = await _dio.get(searchUrl);
       print('My URL :  $searchUrl');
       print("data : ${response.data}");
-      // List<Search> search = Search.fromJson(response.data) as List<Search>;
-      // return search;
       return Search.fromJson(response.data['location']);
     }catch(error, stacktrace){
       print(
           "Exception occured: $error stackTrace: $stacktrace ");
-      // return<Search>[];
+      return null;
     }
   }
 
@@ -32,6 +30,10 @@ class SearchProvider{
     }catch(error, stacktrace){
       print(
           "Exception occured: $error stackTrace: $stacktrace ");
+      return null;
     }
   }
+
+
+
 }

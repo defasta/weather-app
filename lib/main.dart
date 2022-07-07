@@ -1,11 +1,14 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:geolocator/geolocator.dart';
 import 'package:volantis_weather_app/bloc/search_event.dart';
 import 'package:volantis_weather_app/model/LocationModel.dart';
 import 'package:volantis_weather_app/repositories/search_repository.dart';
+import 'package:flutter/services.dart';
 import 'dart:convert';
 import 'bloc/search_bloc.dart';
 import 'bloc/search_state.dart';
+import 'package:geocoding/geocoding.dart';
 
 void main() {
   runApp(const VolantisWeatherApp());
@@ -22,17 +25,52 @@ class _VolantisWeatherAppState extends State<VolantisWeatherApp> {
 
   final SearchBloc _searchBloc = SearchBloc(searchRepository: SearchRepository());
 
+  final Geolocator geolocator = Geolocator();
+
+  late Position _currentPosition;
+  late String _currentAddress;
   String location = "Yogyakarta";
   String weather = 'clear';
   int temperature = 0;
 
   @override
   void initState(){
+    //  Geolocator
+    //     .getCurrentPosition(desiredAccuracy: LocationAccuracy.best)
+    //     .then((Position position) {
+    //   // _searchBloc.add(FetchCurrentLocation(currentPosition: position));
+    //    setState(() {
+    //      _currentPosition = position;
+    //    });
+    //    _getAddressFromLatLng();
+    //  }).catchError((e) {
+    //   print(e);
+    // });
     _searchBloc.initialState;
     super.initState();
   }
 
-  void onTextFieldSubmitted(String city) {
+  _getAddressFromLatLng() async {
+    try {
+      List<Placemark> p = await GeocodingPlatform.instance.placemarkFromCoordinates(
+          _currentPosition.latitude, _currentPosition.longitude);
+
+      Placemark place = p[0];
+
+      setState(() {
+        _currentAddress =
+        "${place.locality}, ${place.postalCode}, ${place.country}";
+      });
+
+      onTextFieldSubmitted(place.locality!);
+
+      print(place.locality);
+    } catch (e) {
+      print(e);
+    }
+  }
+
+  void onTextFieldSubmitted(String city) async{
     fetchSearch(city);
   }
 
@@ -46,7 +84,7 @@ class _VolantisWeatherAppState extends State<VolantisWeatherApp> {
   Widget build(BuildContext context) {
     return MaterialApp(
       home: Container(
-        decoration: BoxDecoration(
+        decoration: const BoxDecoration(
           image: DecorationImage(
             image: AssetImage('images/clear.png'),
             fit: BoxFit.cover
@@ -79,7 +117,10 @@ class _VolantisWeatherAppState extends State<VolantisWeatherApp> {
                           _searchBloc.add(FetchLocation(inputCity: state.search!.name));
                         }else if(state is LocationLoaded){
                           return _buildSearchedCityWeather(context, state.locationModel);
-                        } else if(state is SearchFailure){
+                        }else if(state is CurrentLocationLoaded){
+                          _searchBloc.add(FetchLocation(inputCity: state.placemark.locality!));
+                        }
+                        else if(state is SearchFailure){
                           return Container();
                         }
                         return Container();
@@ -110,8 +151,8 @@ class _VolantisWeatherAppState extends State<VolantisWeatherApp> {
                     onTextFieldSubmitted(input);
                   },
                   style: TextStyle(color: Colors.white, fontSize: 24),
-                  decoration: InputDecoration(
-                      hintText: "Cari kota lain",
+                  decoration: const InputDecoration(
+                      hintText: "Cari kota",
                       hintStyle: TextStyle(color: Colors.white, fontSize: 18.0),
                       prefixIcon: Icon(Icons.search, color: Colors.white)
                   ),
@@ -120,19 +161,21 @@ class _VolantisWeatherAppState extends State<VolantisWeatherApp> {
             ],
           ),
           Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            crossAxisAlignment: CrossAxisAlignment.center,
             children: <Widget>[
               Center(
                 child: Text(
-                  location,
-                  style: TextStyle(color: Colors.white, fontSize: 48.0),
+                  "Cuaca Hari Ini",
+                  style: const TextStyle(color: Colors.white, fontSize: 48.0),
                 ),
               ),
-              Center(
-                child: Text(
-                  temperature.toString() +' °C',
-                  style: TextStyle(color: Colors.white, fontSize: 72.0),
-                ),
-              ),
+              // Center(
+              //   child: Text(
+              //     "Bagaimana cuaca hari ini?",
+              //     style: const TextStyle(color: Colors.white, fontSize: 72.0),
+              //   ),
+              // ),
             ],
           ),
         ],
@@ -155,7 +198,7 @@ class _VolantisWeatherAppState extends State<VolantisWeatherApp> {
                     onTextFieldSubmitted(input);
                   },
                   style: TextStyle(color: Colors.white, fontSize: 24),
-                  decoration: InputDecoration(
+                  decoration: const InputDecoration(
                       hintText: "Cari kota lain",
                       hintStyle: TextStyle(color: Colors.white, fontSize: 18.0),
                       prefixIcon: Icon(Icons.search, color: Colors.white)
@@ -167,15 +210,16 @@ class _VolantisWeatherAppState extends State<VolantisWeatherApp> {
           Column(
             children: <Widget>[
               Center(
-                child: Text(
+                child:
+                Text(
                   locationModel!.location.name,
-                  style: TextStyle(color: Colors.white, fontSize: 48.0),
+                  style: const TextStyle(color: Colors.white, fontSize: 48.0),
                 ),
               ),
               Center(
                 child: Text(
                   locationModel.current.temp_c.toString() +' °C',
-                  style: TextStyle(color: Colors.white, fontSize: 72.0),
+                  style: const TextStyle(color: Colors.white, fontSize: 72.0),
                 ),
               ),
             ],
@@ -192,8 +236,8 @@ class _VolantisWeatherAppState extends State<VolantisWeatherApp> {
           child: Row(
             mainAxisAlignment: MainAxisAlignment.center,
             crossAxisAlignment: CrossAxisAlignment.center,
-            children:  [
-              CircularProgressIndicator()
+            children:  const [
+              CircularProgressIndicator(color: Colors.white,)
             ],
           ),
         )

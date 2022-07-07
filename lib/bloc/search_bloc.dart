@@ -1,5 +1,7 @@
 import 'package:bloc/bloc.dart';
 import 'package:flutter/cupertino.dart';
+import 'package:geocoding/geocoding.dart';
+import 'package:geolocator/geolocator.dart';
 import 'package:volantis_weather_app/bloc/search_event.dart';
 import 'package:volantis_weather_app/bloc/search_state.dart';
 import 'package:volantis_weather_app/model/LocationModel.dart';
@@ -35,6 +37,16 @@ class SearchBloc extends Bloc<SearchEvent, SearchState>{
         yield SearchLoading();
         LocationModel? _locationModel = await _searchRepository.fetchLocation(event.inputCity);
         yield LocationLoaded(locationModel: _locationModel);
+      }catch(error){
+        yield const SearchFailure(error: "error");
+      }
+    }
+    if(event is FetchCurrentLocation) {
+      try{
+        yield SearchLoading();
+        List<Placemark> p = await GeocodingPlatform.instance.placemarkFromCoordinates(event.currentPosition.latitude, event.currentPosition.longitude);
+        Placemark place = p[0];
+        yield CurrentLocationLoaded(placemark: place);
       }catch(error){
         yield const SearchFailure(error: "error");
       }

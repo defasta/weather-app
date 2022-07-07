@@ -1,5 +1,7 @@
 
 import 'package:equatable/equatable.dart';
+import 'package:flutter/cupertino.dart';
+import 'package:geocoding/geocoding.dart';
 import 'package:volantis_weather_app/model/LocationModel.dart';
 import 'package:volantis_weather_app/model/SearchModel.dart';
 
@@ -46,5 +48,15 @@ class LocationLoaded extends SearchState{
   String toString() => 'Location Loaded {data: $locationModel}';
   @override
   List<Object> get props => [locationModel!];
+}
+
+class CurrentLocationLoaded extends SearchState{
+  final Placemark placemark;
+
+  const CurrentLocationLoaded({required this.placemark});
+  @override
+  String toString() => 'Current Location Loaded {data: $placemark}';
+  @override
+  List<Object> get props => [placemark];
 }
 
